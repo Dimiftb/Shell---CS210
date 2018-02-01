@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_INPUT_SIZE 512
 #define DELIMITER_LENGTH 8
@@ -9,6 +10,7 @@
 void getInput(char *input);
 void parse(char *input, char **arguments);
 int executeCommand(char **arguments);
+
 int main() {
     int exitStatus = 0;
     do {
@@ -16,9 +18,7 @@ int main() {
         getInput(input);
         char *arguments[MAX_ARGUMENTS];
         parse(input, arguments);
-        
         exitStatus = executeCommand(arguments);
-        
 
     } while (exitStatus != 1);
     return 0;
@@ -30,7 +30,9 @@ int main() {
 void getInput(char *input) {
 
     printf("> ");
-    fgets(input, MAX_INPUT_SIZE, stdin);
+    if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
+        exit(0);
+    }
 
 }
 
@@ -44,17 +46,18 @@ void parse(char *input, char **arguments) {
     const char delimiters[10] = " \t;<>|\n&";
     char* token;
 
-    token = strtok(input, delimiters);
+    token = strtok(input, delimiters);  
+    //printf("(%s)",token);
     int i = 0;
+    //printf("(%s)",input);
     while(token != NULL) {
         arguments[i] = token;
         i++;
         printf("(%s)\n", token);
-        token = strtok(NULL, delimiters);
-        
+        token = strtok(NULL, delimiters);        
     }
     arguments[i] = NULL;
-
+	
 }
 
 /*
@@ -64,8 +67,11 @@ void parse(char *input, char **arguments) {
 int executeCommand(char **arguments) {
     char *command = arguments[0];
     //EOF (ctrl-D) or exit
-    if(command == NULL || strcmp("exit", command) == 0) {
-        return 1;
+    if(arguments[0] == NULL){
+       return 0;
+    }
+    else if(strcmp("exit", command) == 0) {
+       return 1;
     }
     
     return 0;
