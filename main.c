@@ -47,9 +47,7 @@ void parse(char *input, char **arguments) {
     char* token;
 
     token = strtok(input, delimiters);  
-    //printf("(%s)",token);
     int i = 0;
-    //printf("(%s)",input);
     while(token != NULL) {
         arguments[i] = token;
         i++;
