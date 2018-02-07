@@ -10,17 +10,17 @@
 #define MAX_ARGUMENTS 50
 
 
-void getInput(char *input);
-void parse(char *input, char **arguments);
-int executeCommand(char **arguments);
-void execute(char **arguments);
+void getInput(char* input);
+void parse(char* input, char** arguments);
+int executeCommand(char** arguments);
+void execute(char** arguments);
 
 int main() {
     int exitStatus = 0;
     do {
         char input[MAX_INPUT_SIZE] = {'\0'};
         getInput(input);
-        char *arguments[MAX_ARGUMENTS];
+        char* arguments[MAX_ARGUMENTS];
         parse(input, arguments);
         exitStatus = executeCommand(arguments);
 
@@ -28,10 +28,10 @@ int main() {
     return 0;
 }
 
-/*
- *  Gets input from the user
+/* 
+ *   Gets input from the user
  */
-void getInput(char *input) {
+void getInput(char* input) {
 
     printf("> ");
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
@@ -39,16 +39,15 @@ void getInput(char *input) {
     }
 
 }
-
-/*
- * Tokenizes the input, storing each token into arguments
- * Places NULL after the last token, into arguments
- * Assumes arguments has space
+/* 
+ *  Tokenizes the input, storing each token into arguments
+ *  Places NULL after the last token, into arguments
+ *  Assumes arguments has space
  */
-void parse(char *input, char **arguments) {
+void parse(char* input, char** arguments) {
     
     const char delimiters[10] = " \t;<>|\n&";
-    char* token;
+    char*  token;
 
     token = strtok(input, delimiters);  
     int i = 0;
@@ -62,12 +61,12 @@ void parse(char *input, char **arguments) {
 	
 }
 
-/*
- * Excutes the command
- * Returns 1 if exiting
+/* 
+ *  Excutes the command
+ *  Returns 1 if exiting
  */
-int executeCommand(char **arguments) {
-    char *command = arguments[0];
+int executeCommand(char** arguments) {
+    char* command = arguments[0];
     //EOF (ctrl-D) or exit
     if(arguments[0] == NULL){
        return 0;
@@ -83,10 +82,10 @@ int executeCommand(char **arguments) {
 
 }
 
-/*
- *  Creates a child process, and executes the given command 
+/* 
+ *   Creates a child process, and executes the given command 
  */
-void execute(char **arguments) {
+void execute(char** arguments) {
     pid_t pid = fork();
     if (pid < 0) {
         //Error if pid < 0
