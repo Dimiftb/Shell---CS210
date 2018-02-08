@@ -12,19 +12,19 @@
 
 void getInput(char* input);
 void parse(char* input, char** arguments);
-int executeCommand(char** arguments);
+void executeCommand(char** arguments);
 void execute(char** arguments);
 
 int main() {
-    int exitStatus = 0;
+
     do {
         char input[MAX_INPUT_SIZE] = {'\0'};
         getInput(input);
         char* arguments[MAX_ARGUMENTS];
         parse(input, arguments);
-        exitStatus = executeCommand(arguments);
+        executeCommand(arguments);
 
-    } while (exitStatus != 1);
+    } while (1);
     return 0;
 }
 
@@ -65,20 +65,18 @@ void parse(char* input, char** arguments) {
  *  Excutes the command
  *  Returns 1 if exiting
  */
-int executeCommand(char** arguments) {
+void executeCommand(char** arguments) {
     char* command = arguments[0];
-    //EOF (ctrl-D) or exit
+    //Ensure we're not going to dereference a null pointer
     if(arguments[0] == NULL){
-       return 0;
+       return;
     }
     else if(strcmp("exit", command) == 0) {
-       return 1;
+       exit(0);
     } else {
         //Non internal command
         execute(arguments);
     }
-    
-    return 0;
 
 }
 
@@ -92,8 +90,7 @@ void execute(char** arguments) {
         printf("Error forking\n");
     } else if (pid > 0) {
         //Parent process
-        int status;
-        wait(&status);
+        wait(NULL);
     } else {
         //Child process
         //Use execvp so we can pass arguments, and it checks the PATH
