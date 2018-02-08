@@ -15,12 +15,13 @@ void getInput(char *input);
 void parse(char *input, char **arguments);
 void executeCommand(char **arguments);
 void execute(char **arguments);
+void setDirectory();
+
+//Internal commands
+void exitShell();
 void getPath();
 void setPath(char **arguments);
-void setDirectory();
 void changeDirectory(char **arguments);
-
-void exitShell();
 
 int main() {
     int exitStatus = 0;
@@ -85,32 +86,22 @@ void parse(char *input, char **arguments) {
 }
 
 /*
- * Excutes the command
- * Returns 1 if exiting
+ * Exeutes the command
  */
 void executeCommand(char **arguments) {
     char *command = arguments[0];
     //Ensure we're not dereferencing a null pointer
     if(arguments[0] == NULL){
         return;
-    }
-    //exit
-    else if(strcmp("exit", command) == 0) {
+    } else if(strcmp("exit", command) == 0) {
         exitShell(originalPath);
-    } 
-    else if(strcmp("getpath", command) == 0) {
+    } else if(strcmp("getpath", command) == 0) {
         getPath();
-
-    }
-    else if(strcmp("setpath", command) == 0) {
+    } else if(strcmp("setpath", command) == 0) {
         setPath(arguments);
-
-    }
-    else if(strcmp("cd", command) == 0) {
+    } else if(strcmp("cd", command) == 0) {
         changeDirectory(arguments);
-
-    }
-    else {
+    } else {
         //Non internal command 
         execute(arguments);
     }
@@ -126,8 +117,7 @@ void execute(char **arguments) {
         printf("Error forking\n");
     } else if (pid > 0) {
         //Parent process
-        int status;
-        wait(&status);
+        wait(NULL);
     } else {
         //Child process
         //Use execvp so we can pass arguments, and it checks the PATH
@@ -144,15 +134,13 @@ void execute(char **arguments) {
  */
 void getPath() {
     printf("PATH: %s\n", getenv("PATH"));
-     
 }
 
 /*
  * Built-in command sets the value of PATH.
  */
 void setPath(char **arguments) {
-    char *argument1 = arguments[1];
-    setenv("PATH", argument1, 1);
+    setenv("PATH", arguments[1], 1);
     printf("Current PATH: %s\n", getenv("PATH"));
 }
 
@@ -164,33 +152,27 @@ void setDirectory() {
     chdir(getenv("HOME"));
     printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
 }
+
 /*
  * Change the cwd
  */
 void changeDirectory(char **arguments) {
     char temp[128];
 
-    
     if(arguments[1] == NULL || strcmp(" ", arguments[1]) == 0) {
         printf("HOME: %s\n", getenv("HOME"));
         chdir(getenv("HOME"));
-        printf("\n\n");
-        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
-    }
-    
-    else if(strcmp(".", arguments[1]) == 0) {
+    } else if(strcmp(".", arguments[1]) == 0) {
+        //Current directory
         chdir(".");
-        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
-    }
-    else if(strcmp("..", arguments[1]) == 0) {
+    } else if(strcmp("..", arguments[1]) == 0) {
+        //Parent directory
         chdir("..");
-        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
-    }
-    
-    else {
-       if(chdir(arguments[1]) == -1){
-           printf("Error: %s", strerror(errno));
+    } else {
+        //Changing to certain directory
+       if(chdir(arguments[1]) == -1) {
+           printf("Error: %s\n", strerror(errno));
        }
     }
-    
+    printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
 }
