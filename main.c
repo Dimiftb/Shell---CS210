@@ -8,53 +8,59 @@
 #define MAX_INPUT_SIZE 512
 #define DELIMITER_LENGTH 8
 #define MAX_ARGUMENTS 50
+char *originalPath;
 
 
-void getInput(char *input, char *pathog);
+void getInput(char *input);
 void parse(char *input, char **arguments);
-int executeCommand(char **arguments);
+void executeCommand(char **arguments);
 void execute(char **arguments);
 void getPath();
 void setPath(char **arguments);
 void setDirectory();
 void changeDirectory(char **arguments);
 
+void exitShell();
+
 int main() {
     int exitStatus = 0;
-    char *pathog = getenv("PATH");
-    printf("Initial PATH test: %s\n", pathog);
+    originalPath = getenv("PATH");
+    printf("Initial PATH test: %s\n", originalPath);
     setDirectory();
     do {
         
         char input[MAX_INPUT_SIZE] = {'\0'};
-        getInput(input, pathog);
+        getInput(input);
         char *arguments[MAX_ARGUMENTS];
         parse(input, arguments);
-        exitStatus = executeCommand(arguments);
-       
-        if(exitStatus == 1) {
-            
-        }
-        
-    } while (exitStatus != 1);
-    setenv("PATH", pathog, 1);
-       printf("Last 'exit' PATH check: %s\n", getenv("PATH"));
+        executeCommand(arguments);
+ 
+    } while (1);
+
     return 0;
 }
 
 /*
  *  Gets input from the user
  */
-void getInput(char *input, char *pathog) {
+void getInput(char *input) {
 
     printf("> ");
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
-       setenv("PATH", pathog, 1);
-       printf("Last EOF PATH check: %s\n", getenv("PATH"));
-        exit(0);
+        exitShell(originalPath);
     }
 
 }
+
+/*
+ *   Exits the shell
+ *   Resets the PATH to the original
+ */
+void exitShell() {
+    setenv("PATH", originalPath, 1);
+    printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
+    exit(0);
+ }
 
 /*
  * Tokenizes the input, storing each token into arguments
@@ -82,33 +88,32 @@ void parse(char *input, char **arguments) {
  * Excutes the command
  * Returns 1 if exiting
  */
-int executeCommand(char **arguments) {
+void executeCommand(char **arguments) {
     char *command = arguments[0];
-    //EOF (ctrl-D) 
+    //Ensure we're not dereferencing a null pointer
     if(arguments[0] == NULL){
-       return 0;
+        return;
     }
     //exit
     else if(strcmp("exit", command) == 0) {
-        return 1;
+        exitShell(originalPath);
     } 
     else if(strcmp("getpath", command) == 0) {
         getPath();
-        return 0;
+
     }
     else if(strcmp("setpath", command) == 0) {
         setPath(arguments);
-        return 0;
+
     }
     else if(strcmp("cd", command) == 0) {
         changeDirectory(arguments);
-        return 0;
+
     }
     else {
         //Non internal command 
         execute(arguments);
     }
-    return 0;
 }
 
 /*
@@ -138,8 +143,7 @@ void execute(char **arguments) {
  * Built-in command prints the value of PATH.
  */
 void getPath() {
-     
-    printf("PATH: %s\n" ,getenv("PATH"));
+    printf("PATH: %s\n", getenv("PATH"));
      
 }
 
@@ -156,35 +160,35 @@ void setPath(char **arguments) {
  * Set the cwd to HOME.
  */
 void setDirectory() {
-    long size = 31;
     char temp[128];
     chdir(getenv("HOME"));
-    printf("Current working directory: %s/\n", getcwd(temp, (size_t)size));
+    printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
 }
 /*
  * Change the cwd
  */
 void changeDirectory(char **arguments) {
-     long size = 31;
     char temp[128];
-    char *argument1 = arguments[1];
-    if(strcmp(" ", argument1) == 0) {
+
+    
+    if(arguments[1] == NULL || strcmp(" ", arguments[1]) == 0) {
         printf("HOME: %s\n", getenv("HOME"));
         chdir(getenv("HOME"));
         printf("\n\n");
-        printf("Current working directory: %s/\n", getcwd(temp, (size_t)size));
+        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
     }
-    else if(strcmp(".", argument1) == 0) {
+    
+    else if(strcmp(".", arguments[1]) == 0) {
         chdir(".");
-        printf("Current working directory: %s/\n", getcwd(temp, (size_t)size));
+        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
     }
-    else if(strcmp("..", argument1) == 0) {
+    else if(strcmp("..", arguments[1]) == 0) {
         chdir("..");
-        printf("Current working directory: %s/\n", getcwd(temp, (size_t)size));
+        printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
     }
     
     else {
-       if(chdir(argument1) == -1){
+       if(chdir(arguments[1]) == -1){
            printf("Error: %s", strerror(errno));
        }
     }
