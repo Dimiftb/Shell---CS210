@@ -148,7 +148,7 @@ void setPath(char **arguments) {
  * Set the cwd to HOME.
  */
 void setDirectory() {
-    char temp[128];
+    char temp[MAX_INPUT_SIZE];
     chdir(getenv("HOME"));
     printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
 }
@@ -157,7 +157,7 @@ void setDirectory() {
  * Change the cwd
  */
 void changeDirectory(char **arguments) {
-    char temp[128];
+    char temp[MAX_INPUT_SIZE];
 
     if(arguments[1] == NULL || strcmp(" ", arguments[1]) == 0) {
         printf("HOME: %s\n", getenv("HOME"));
