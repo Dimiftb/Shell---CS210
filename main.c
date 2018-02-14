@@ -24,7 +24,6 @@ void setPath(char **arguments);
 void changeDirectory(char **arguments);
 
 int main() {
-    int exitStatus = 0;
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
     setDirectory();
@@ -48,7 +47,7 @@ void getInput(char *input) {
 
     printf("> ");
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
-        exitShell(originalPath);
+        exitShell();
     }
 
 }
@@ -94,7 +93,7 @@ void executeCommand(char **arguments) {
     if(arguments[0] == NULL){
         return;
     } else if(strcmp("exit", command) == 0) {
-        exitShell(originalPath);
+        exitShell();
     } else if(strcmp("getpath", command) == 0) {
         getPath();
     } else if(strcmp("setpath", command) == 0) {
