@@ -140,6 +140,10 @@ void getPath() {
  * Built-in command sets the value of PATH.
  */
 void setPath(char **arguments) {
+    if (arguments[1] == NULL) {
+        fprintf(stderr, "setpath requires an argument. PATH unchanged\n");
+        return;
+    }
     setenv("PATH", arguments[1], 1);
     printf("Current PATH: %s\n", getenv("PATH"));
 }
