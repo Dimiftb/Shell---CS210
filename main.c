@@ -15,18 +15,18 @@ void getInput(char *input);
 void parse(char *input, char **arguments);
 void executeCommand(char **arguments);
 void execute(char **arguments);
-void setDirectory();
+
 
 //Internal commands
 void exitShell();
-void getPath();
+void getPath(char **arguments);
 void setPath(char **arguments);
 void changeDirectory(char **arguments);
 
 int main() {
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
-    setDirectory();
+    
     do {
         
         char input[MAX_INPUT_SIZE] = {'\0'};
@@ -77,7 +77,7 @@ void parse(char *input, char **arguments) {
     while(token != NULL) {
         arguments[i] = token;
         i++;
-        printf("(%s)\n", token);
+        //printf("(%s)\n", token);
         token = strtok(NULL, delimiters);        
     }
     arguments[i] = NULL;
@@ -93,9 +93,13 @@ void executeCommand(char **arguments) {
     if(arguments[0] == NULL){
         return;
     } else if(strcmp("exit", command) == 0) {
+        if (arguments[1] != NULL) {
+            printf("Too many arguments for exit\n");
+            return;
+        }
         exitShell();
     } else if(strcmp("getpath", command) == 0) {
-        getPath();
+        getPath(arguments);
     } else if(strcmp("setpath", command) == 0) {
         setPath(arguments);
     } else if(strcmp("cd", command) == 0) {
@@ -131,51 +135,61 @@ void execute(char **arguments) {
 /*
  * Built-in command prints the value of PATH.
  */
-void getPath() {
+void getPath(char **arguments) {
+        if (arguments[1] != NULL) {
+            printf("Too many arguments for getPath\n"); 
+            return;
+        }
     printf("PATH: %s\n", getenv("PATH"));
 }
 
 /*
  * Built-in command sets the value of PATH.
  */
-void setPath(char **arguments) {
+void setPath(char **arguments) {  
+    if (arguments[2] != NULL) {
+        printf("Too many arguments for setpath\n");
+        return;
+    }
     if (arguments[1] == NULL) {
         fprintf(stderr, "setpath requires an argument. PATH unchanged\n");
         return;
     }
-    setenv("PATH", arguments[1], 1);
-    printf("Current PATH: %s\n", getenv("PATH"));
+    if (strcmp(arguments[1], "HOME") == 0) {
+        char workingDir[128];
+        chdir(getenv("HOME"));
+        printf("Current working directory: %s\n", getcwd(workingDir, sizeof(workingDir)));
+    } else {
+        setenv("PATH", arguments[1], 1);
+        printf("Current PATH: %s\n", getenv("PATH"));
+    }
 }
 
 /*
- * Set the cwd to HOME.
- */
-void setDirectory() {
-    char temp[MAX_INPUT_SIZE];
-    chdir(getenv("HOME"));
-    printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
-}
-
-/*
- * Change the cwd
+ * Changes the working directory
  */
 void changeDirectory(char **arguments) {
-    char temp[MAX_INPUT_SIZE];
-
-    if(arguments[1] == NULL || strcmp(" ", arguments[1]) == 0) {
-        printf("HOME: %s\n", getenv("HOME"));
-        chdir(getenv("HOME"));
-    } else if(strcmp(".", arguments[1]) == 0) {
-        //Current directory
-        chdir(".");
-    } else if(strcmp("..", arguments[1]) == 0) {
-        //Parent directory
-        chdir("..");
-    } else {
-        //Changing to certain directory
-       if(chdir(arguments[1]) == -1) {
-           printf("Error: %s\n", strerror(errno));
-       }
+    char workingDir[MAX_INPUT_SIZE];
+    //Check for too many arguments
+    if (arguments[2] != NULL) {
+        printf("Too many arguments for cd\n");
+        return;
     }
-    printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
+    if (arguments[1] == NULL) {
+        //Change to home
+        printf("Current home: %s\n", getenv("HOME"));
+        chdir(getenv("HOME"));
+        printf("Current working directory: %s\n", getcwd(workingDir, sizeof(workingDir)));
+    } else {
+        if (strcmp(".", arguments[1]) == 0) {
+            chdir(".");
+        } else if( strcmp("..", arguments[1]) == 0) {
+            chdir("..");
+        } else { 
+            if(chdir(arguments[1]) == -1) {
+                printf("Error: %s", strerror(errno));
+            }
+          }
+      }
+      printf("Current working directory: %s/\n", getcwd(workingDir, sizeof(workingDir)));
 }
