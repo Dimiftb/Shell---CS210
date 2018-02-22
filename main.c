@@ -10,10 +10,14 @@
 #define MAX_ARGUMENTS 50
 char *originalPath;
 
+struct historyCommand {
+    int commandNumber;
+    char command[MAX_INPUT_SIZE];
+} typedef historyCommand;
 
 void getInput(char *input);
 void parse(char *input, char **arguments);
-void executeCommand(char **arguments);
+void executeCommand(char **arguments, int historyCount, historyCommand commands[]);
 void execute(char **arguments);
 void setDirectory();
 
@@ -23,18 +27,31 @@ void getPath();
 void setPath(char **arguments);
 void changeDirectory(char **arguments);
 
+void saveCommand(char *input, int historyCount, historyCommand commands[]);
+void showHistory(int historyCount, historyCommand commands[]);
+void getHistory(char *input, int historyCount, historyCommand commands[]);
+
 int main() {
-    int exitStatus = 0;
+    //Add to, based on text file lines
+    int historyCount = 0;
+    historyCommand commands [20] = {0};
+
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
     setDirectory();
     do {
-        
         char input[MAX_INPUT_SIZE] = {'\0'};
         getInput(input);
-        char *arguments[MAX_ARGUMENTS];
-        parse(input, arguments);
-        executeCommand(arguments);
+        if (strcspn(input, "!") != 0) {
+            saveCommand(input, historyCount, commands);
+            char *arguments[MAX_ARGUMENTS];
+            parse(input, arguments);
+            executeCommand(arguments, historyCount, commands);
+            historyCount++;   
+        } else if (strcspn(input, "!") == 0){
+            //printf("Call history");            
+            getHistory(input, historyCount, commands);
+        }
  
     } while (1);
 
@@ -48,7 +65,7 @@ void getInput(char *input) {
 
     printf("> ");
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
-        exitShell(originalPath);
+        exitShell();
     }
 
 }
@@ -88,20 +105,22 @@ void parse(char *input, char **arguments) {
 /*
  * Exeutes the command
  */
-void executeCommand(char **arguments) {
+void executeCommand(char **arguments, int historyCount, historyCommand *commands) {
     char *command = arguments[0];
     //Ensure we're not dereferencing a null pointer
     if(arguments[0] == NULL){
         return;
     } else if(strcmp("exit", command) == 0) {
-        exitShell(originalPath);
+        exitShell();
     } else if(strcmp("getpath", command) == 0) {
         getPath();
     } else if(strcmp("setpath", command) == 0) {
         setPath(arguments);
     } else if(strcmp("cd", command) == 0) {
         changeDirectory(arguments);
-    } else {
+    } else if(strcmp("history", command) == 0) {
+        showHistory(historyCount, commands);
+    }else {
         //Non internal command 
         execute(arguments);
     }
@@ -175,4 +194,46 @@ void changeDirectory(char **arguments) {
        }
     }
     printf("Current working directory: %s/\n", getcwd(temp, sizeof(temp)));
+}
+
+
+/*
+ * Saves commands to array (20)
+ */
+void saveCommand(char *input, int historyCount, historyCommand *commands){
+
+    commands[historyCount].commandNumber = historyCount;
+    strcpy(commands[historyCount].command, input);
+
+}
+
+/*
+ * Shows entire history, 20 commands
+ */
+void showHistory(int historyCount, historyCommand *commands){
+
+    for (int i = 0; i < historyCount; i++){
+        printf("count: %d\n", commands[i].commandNumber+1);
+        printf("command: %s\n", commands[i].command);
+    }
+     
+}
+
+/*
+ * Do user's chosen history command, based on input
+ */
+void getHistory(char *input, int historyCount, historyCommand *commands){
+    
+        printf("input is: %c\n", input[1]);
+        
+    //!!
+    // if ('!' == input[1]){
+    //     //wants a pointer to a pointer of char (pointer to an array). Giving a pointer to char right now
+
+        // char *arguments[MAX_ARGUMENTS];
+        // parse(commands[historyCount].command, arguments);
+        // executeCommand(arguments, historyCount, commands);
+    // }
+    
+
 }
