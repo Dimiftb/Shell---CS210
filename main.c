@@ -27,14 +27,24 @@ int main() {
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
+    //Add to, based on text file lines
+    int historyCount = 21;
+    historyCommand commands [20] = {0};
     
     do {
         
         char input[MAX_INPUT_SIZE] = {'\0'};
         getInput(input);
-        char *arguments[MAX_ARGUMENTS];
-        parse(input, arguments);
-        executeCommand(arguments);
+        if (input[0] != '!') {
+            saveCommand(input, historyCount, commands);
+            char *arguments[MAX_ARGUMENTS];
+            parse(input, arguments);
+            executeCommand(arguments, historyCount, commands);
+            historyCount++;   
+        } else {
+            //printf("Call history");            
+            getHistory(input, historyCount, commands);
+        }
  
     } while (1);
 
@@ -165,6 +175,16 @@ void setPath(char **arguments) {
         setenv("PATH", arguments[1], 1);
         printf("Current PATH: %s\n", getenv("PATH"));
     }
+}
+
+
+/*
+ * Saves commands to array (20)
+ */
+void saveCommand(char *input, int historyCount, historyCommand *commands){
+
+    commands[21].commandNumber = historyCount;
+    strcpy(commands[21].command, input);
 }
 
 /*
