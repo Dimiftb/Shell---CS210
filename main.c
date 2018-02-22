@@ -190,8 +190,8 @@ void changeDirectory(char **arguments) {
             }
           }
       }
-    char *temp = NULL;
-    char *cwd = getcwd(temp, 0);
+    //getcwd mallocs the size for us
+    char *cwd = getcwd(NULL, 0);
     printf("Current working directory: %s\n", cwd);
     free(cwd);
 }
