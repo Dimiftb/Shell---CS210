@@ -26,6 +26,7 @@ void changeDirectory(char **arguments);
 int main() {
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
+    chdir(getenv("HOME"));
     
     do {
         
@@ -125,7 +126,7 @@ void execute(char **arguments) {
         //Child process
         //Use execvp so we can pass arguments, and it checks the PATH
         if (execvp(arguments[0], arguments) < 0) {
-            printf("Executing process %s failed: %s\n", arguments[0], strerror(errno));
+	    perror(arguments[0]);
         }
         //Just incase
         exit(0);
@@ -185,7 +186,7 @@ void changeDirectory(char **arguments) {
             chdir("..");
         } else { 
             if(chdir(arguments[1]) == -1) {
-                printf("Error: %s", strerror(errno));
+		perror(arguments[1]);
             }
           }
       }
