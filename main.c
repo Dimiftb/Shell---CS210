@@ -156,9 +156,8 @@ void setPath(char **arguments) {
         return;
     }
     if (strcmp(arguments[1], "HOME") == 0) {
-        chdir(getenv("HOME"));
-        char *temp = NULL;
-        char *cwd = getcwd(temp, 0);
+        chdir(getenv("HOME"));  
+	char *cwd = getcwd(NULL, 0);
         printf("Current working directory: %s\n", cwd);
         free(cwd);
     } else {
@@ -190,8 +189,8 @@ void changeDirectory(char **arguments) {
             }
           }
       }
-    char *temp = NULL;
-    char *cwd = getcwd(temp, 0);
+    //getcwd mallocs the size for us
+    char *cwd = getcwd(NULL, 0);
     printf("Current working directory: %s\n", cwd);
     free(cwd);
 }
