@@ -11,12 +11,15 @@
 #define MAX_HISTORY_COUNT 20
 char *originalPath;
 
+struct historyCommand {
+    int commandNumber;
+    char command[MAX_INPUT_SIZE];
+} typedef historyCommand;
 
 void getInput(char *input);
 void parse(char *input, char **arguments);
-void executeCommand(char **arguments);
+void executeCommand(char **arguments, historyCommand* history);
 void execute(char **arguments);
-
 
 //Internal commands
 void exitShell();
@@ -24,13 +27,8 @@ void getPath(char **arguments);
 void setPath(char **arguments);
 void changeDirectory(char **arguments);
 
-
-struct historyCommand {
-    int commandNumber;
-    char *command[MAX_INPUT_SIZE];
-} typedef historyCommand;
-
 void saveCommand(char *input, historyCommand* history, int historyCount);
+void printHistory(char **arguments, historyCommand* history);
 
 int main() {
     originalPath = getenv("PATH");
@@ -40,19 +38,19 @@ int main() {
     historyCommand history[MAX_HISTORY_COUNT] = {0};
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
-	getInput(input);
-	if (input[0] == '!') {
-	    //Handle history stuff
-    } else {
-        //Save the command to history
-        saveCommand(input, history, historyCount);
-        historyCount = (historycount + 1) % MAX_HISTORY_COUNT;
-        
-        char *arguments[MAX_ARGUMENTS];
-        parse(input, arguments);
-        executeCommand(arguments);
-    }
+        getInput(input);
+        if (input[0] == '!') {
+            //Handle history stuff
+        } else {
+            //Save the command to history
+            saveCommand(input, history, historyCount);
+            historyCount = (historyCount + 1) % MAX_HISTORY_COUNT;
 
+            char *arguments[MAX_ARGUMENTS];
+            parse(input, arguments);
+            executeCommand(arguments, history);
+        }
+    }
     return 0;
 }
 
@@ -103,7 +101,7 @@ void parse(char *input, char **arguments) {
 /*
  * Exeutes the command
  */
-void executeCommand(char **arguments) {
+void executeCommand(char **arguments, historyCommand* history) {
     char *command = arguments[0];
     //Ensure we're not dereferencing a null pointer
     if(arguments[0] == NULL){
@@ -122,6 +120,7 @@ void executeCommand(char **arguments) {
         changeDirectory(arguments);
     } else if(strcmp("history", command) == 0) {
         //Print history
+        printHistory(arguments, history);
     } else {
         //Non internal command 
         execute(arguments);
@@ -219,4 +218,19 @@ void changeDirectory(char **arguments) {
 void saveCommand(char *input, historyCommand *history, int historyCount) {
    history[historyCount].commandNumber = historyCount; 
    strcpy(history[historyCount].command, input);
+}
+
+/*
+ *  Print entries in history (possibly up to the first null)
+ */
+void printHistory(char **arguments, historyCommand *history) {
+    if (arguments[1] != NULL) {
+        printf("Too many arguments for history\n");
+        return;
+    }
+    for (int i = 0; i < MAX_HISTORY_COUNT; i++) {
+        if (strcmp(history[i].command, "") == 0)
+            break;
+        printf("%d %s", history[i].commandNumber + 1, history[i].command);
+   } 
 }
