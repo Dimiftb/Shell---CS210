@@ -38,15 +38,24 @@ int main() {
     historyCommand history[MAX_HISTORY_COUNT] = {0};
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
+        char *arguments[MAX_ARGUMENTS];
         getInput(input);
         if (input[0] == '!') {
             //Handle history stuff
+            if (input[1] == '!') {
+                //Repeat last command
+            
+                //Temp string since parse alters the first argument
+                char temp[MAX_INPUT_SIZE];
+                strcpy(temp, history[historyCount - 1].command);
+                parse(temp, arguments);
+                executeCommand(arguments, history);
+            }
         } else {
             //Save the command to history
             saveCommand(input, history, historyCount);
             historyCount = (historyCount + 1) % MAX_HISTORY_COUNT;
 
-            char *arguments[MAX_ARGUMENTS];
             parse(input, arguments);
             executeCommand(arguments, history);
         }
