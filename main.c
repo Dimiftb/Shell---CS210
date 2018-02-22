@@ -30,11 +30,13 @@ struct historyCommand {
     char *command[MAX_INPUT_SIZE];
 } typedef historyCommand;
 
+void saveCommand(char *input, historyCommand* history, int historyCount);
+
 int main() {
     originalPath = getenv("PATH");
     printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
-    
+    int historyCount = 0;
     historyCommand history[MAX_HISTORY_COUNT] = {0};
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
@@ -43,10 +45,12 @@ int main() {
 	    //Handle history stuff
     } else {
         //Save the command to history
+        saveCommand(input, history, historyCount);
+        historyCount = (historycount + 1) % MAX_HISTORY_COUNT;
+        
         char *arguments[MAX_ARGUMENTS];
         parse(input, arguments);
         executeCommand(arguments);
-
     }
 
     return 0;
@@ -209,3 +213,10 @@ void changeDirectory(char **arguments) {
     free(cwd);
 }
 
+/*
+ *  Saves the last non-history command into the historyCommand at historyCount
+ */
+void saveCommand(char *input, historyCommand *history, int historyCount) {
+   history[historyCount].commandNumber = historyCount; 
+   strcpy(history[historyCount].command, input);
+}
