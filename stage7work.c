@@ -221,7 +221,9 @@ void setAlias(char **arguments) {
         //look for existing alias
         for(i = 0; i < MAX_ALIASES; i++) {
             if(aliases[i][0] != NULL && strcmp(aliases[i][0], arguments[1]) == 0) {
-                printf("[%s] has been already usead as an alias.\n", aliases[i][0]);
+                printf("[%s-%s] has been updated to ", aliases[i][0], aliases[i][1]);
+                aliases[i][1] = arguments[2];
+                printf("[%s-%s].\n", aliases[i][0], aliases[i][1]);
                 return;
             }
         }
