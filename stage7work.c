@@ -221,9 +221,7 @@ void setAlias(char **arguments) {
         //look for existing alias
         for(i = 0; i < MAX_ALIASES; i++) {
             if(aliases[i][0] != NULL && strcmp(aliases[i][0], arguments[1]) == 0) {
-                printf("[%s-%s] has been updated to ", aliases[i][0], aliases[i][1]);
-                aliases[i][1] = arguments[2];
-                printf("[%s-%s].\n", aliases[i][0], aliases[i][1]);
+                printf("[%s] has been already usead as an alias.\n", aliases[i][0]);
                 return;
             }
         }
@@ -237,7 +235,7 @@ void setAlias(char **arguments) {
                 return;
             }
         }
-        printf("No more aliases can be set\n");
+        fprintf(stderr, "No more aliases can be set\n");
     }
 }
 /*
@@ -246,15 +244,15 @@ void setAlias(char **arguments) {
 void removeAlias(char **arguments) {
     int i;
     for(i = 0; i < MAX_ALIASES; i++) {
-        if(aliases[i][0] != NULL && (strcmp(aliases[i][0], arguments[1]) == 0)) {
+        if(aliases[i][1] != NULL && (strcmp(aliases[i][1], arguments[1]) == 0)) {
+            printf("[%s-%s] successfully removed.\n", aliases[i][0], aliases[i][1]);
             aliases[i][0] = NULL;
             aliases[i][1] = NULL;
+            return;
         }
     }
-    
-    // alias ls myFolder
-    // unalias ls
-    // That works, unsure whether the shell should accept it or not
+    //alias doesn't exist
+    fprintf(stderr, "[%s] is not an existing alias.\n", arguments[1]);
 }
 
 /*
