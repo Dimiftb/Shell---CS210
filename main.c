@@ -89,22 +89,17 @@ int main() {
                     printf("Invalid number for history\n");
                     continue;
                 }
+                if (abs(number) - 1 >= historyCount) {
+                    printf("Not enough history\n");
+                    continue;
+                }
                 if (number > 0) {
                     //Positive
-                    if (number - 1 > historyCount) {
-                        printf("Not enough history\n");
-                        continue;
-                    }
                     executeHistoryCommand(arguments, history, number - 1);
 
                 } else {
                     //Negative
-                    if (abs(number) >= historyCount) {
-                        printf("Not enough history\n");
-                        continue;
-
-                    }
-                    executeHistoryCommand(arguments, history, historyCount + number - 1);
+                    executeHistoryCommand(arguments, history, historyCount + number);
 
                 }
             }
