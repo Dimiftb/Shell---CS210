@@ -46,7 +46,7 @@ int main() {
         getInput(input);
         if (input[0] == '!') {
             //Handle history stuff
-            //Parse it
+
             parse(input, arguments);
             //Check if there's more than 1 arguments
             if (arguments[1] != NULL) {
@@ -60,7 +60,6 @@ int main() {
                     continue;
                 }
 
-                //Temp string since parse alters the first argument
                 executeHistoryCommand(arguments, history, historyCount - 1);
 
             } else {
