@@ -16,7 +16,7 @@ void getInput(char *input);
 void parse(char *input, char **arguments);
 void executeCommand(char **arguments);
 void execute(char **arguments);
-void executeAlias(char **arguments);
+void replaceAlias(char **arguments);
 
 //Internal commands
 void exitShell();
@@ -26,6 +26,7 @@ void changeDirectory(char **arguments);
 void setAlias(char **arguments);
 void removeAlias(char **arguments);
 void printAlias(char **arguments);
+void clearArguments(char **arguments);
 
 int main() {
     originalPath = getenv("PATH");
@@ -38,7 +39,7 @@ int main() {
         getInput(input);
         parse(input, arguments);
         executeCommand(arguments);
- 
+        clearArguments(arguments);
     } while (1);
 
     return 0;
@@ -83,7 +84,7 @@ void parse(char *input, char **arguments) {
         i++;
         token = strtok(NULL, delimiters);        
     }
-    executeAlias(arguments);
+    replaceAlias(arguments);
     arguments[i] = NULL;
 	
 }
@@ -179,7 +180,6 @@ void setPath(char **arguments) {
  */
 void changeDirectory(char **arguments) {
     //Check for too many arguments
-    //arguments[2] = NULL;
     if (arguments[2] != NULL) {
         printf("Too many arguments for cd\n");
         return;
@@ -221,7 +221,8 @@ void setAlias(char **arguments) {
         //look for existing alias
         for(i = 0; i < MAX_ALIASES; i++) {
             if(aliases[i][0] != NULL && strcmp(aliases[i][0], arguments[1]) == 0) {
-                printf("[%s] has been already usead as an alias.\n", aliases[i][0]);
+                printf("[\"%s\" - \"%s\"] has been successfully updated to [\"%s\" - \"%s\"].\n", aliases[i][0], aliases[i][1], aliases[i][0], arguments[2]);
+                aliases[i][1] = arguments[2];
                 return;
             }
         }
@@ -245,24 +246,24 @@ void removeAlias(char **arguments) {
     int i;
     for(i = 0; i < MAX_ALIASES; i++) {
         if(aliases[i][1] != NULL && (strcmp(aliases[i][1], arguments[1]) == 0)) {
-            printf("[%s-%s] successfully removed.\n", aliases[i][0], aliases[i][1]);
+            printf("[\"%s\" - \"%s\"] successfully removed.\n", aliases[i][0], aliases[i][1]);
             aliases[i][0] = NULL;
             aliases[i][1] = NULL;
             return;
         }
     }
     //alias doesn't exist
-    fprintf(stderr, "[%s] is not an existing alias.\n", arguments[1]);
+    fprintf(stderr, "Cannot unalias [\"%s\"] - not an existing alias.\n", arguments[1]);
 }
 
 /*
  * Checks for every command whether it's an alias
  */   
-void executeAlias(char **arguments) {
+void replaceAlias(char **arguments) {
     int i;
     for(i = 0; i < MAX_ALIASES; i++) {
-        if(aliases[i][0] != NULL && (strcmp(arguments[0], aliases[i][1]) == 0)) {
-          strcpy(arguments[0], aliases[i][0]);
+        if(aliases[i][0] != NULL && (strcmp(arguments[0], aliases[i][0]) == 0)) {
+          strcpy(arguments[0], aliases[i][1]);
         }
     }
 }
@@ -274,5 +275,12 @@ void printAlias(char **arguments) {
     int i,j;
     for(i = 0; i < MAX_ALIASES; i++) {
             printf("%d. [%s - %s]; \n", i + 1, aliases[i][0], aliases[i][1]);
+    }
+}
+
+void clearArguments(char **arguments) {
+    int i = 0;
+    for(; i < MAX_ARGUMENTS; i++) {
+        arguments[i] = NULL;
     }
 }
