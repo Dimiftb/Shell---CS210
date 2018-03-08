@@ -39,15 +39,24 @@ int main() {
     printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
     int historyCount = 0;
-    historyCommand history[MAX_HISTORY_COUNT] = {0};
+    historyCommand history[MAX_HISTORY_COUNT] =  {{0}};
+    
+
+    //SHIFT
+
+
+    //set all of history commands to null
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
         char *arguments[MAX_ARGUMENTS];
         getInput(input);
-        if (input[0] == '!') {
+        parse (input, arguments);
+        if (arguments[0] == NULL) {
+            continue;
+        }
+        if (arguments[0][0] == '!') {
             //Handle history stuff
 
-            parse(input, arguments);
             //Check if there's more than 1 arguments
             if (arguments[1] != NULL) {
                 printf("Too many arguments for history invocation\n");
@@ -59,8 +68,11 @@ int main() {
                     printf("History is empty\n");
                     continue;
                 }
-
-                executeHistoryCommand(arguments, history, historyCount - 1);
+                if (historyCount > MAX_HISTORY_COUNT - 1) {
+                    executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT - 1);
+                } else {
+                    executeHistoryCommand(arguments, history, historyCount - 1);
+                }
 
             } else {
                 //Repeating some previous command
@@ -88,23 +100,26 @@ int main() {
                     printf("Invalid number for history\n");
                     continue;
                 }
-                if (abs(number) - 1 >= historyCount) {
+                
+                //Make sure entered number is not greater than current history
+                if ((abs(number)) > MAX_HISTORY_COUNT || abs(number) > historyCount ) {
                     printf("Not enough history\n");
                     continue;
                 }
                 if (number > 0) {
                     //Positive
                     executeHistoryCommand(arguments, history, number - 1);
-
                 } else {
                     //Negative
-                    executeHistoryCommand(arguments, history, historyCount + number);
-
+                    if (historyCount > MAX_HISTORY_COUNT - 1) {
+                        executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT + number);
+                    } else {
+                        executeHistoryCommand(arguments, history, historyCount + number);
+                    }
                 }
             }
         } else {
             //Not a history invocation
-            parse(input, arguments);
             char temp[MAX_INPUT_SIZE] = {'\0'};
 
             //Save the command to history
@@ -121,7 +136,7 @@ int main() {
                 int len = strlen(temp);
                 temp[len - 1] = '\n';
                 saveCommand(temp, history, historyCount);
-                historyCount = (historyCount + 1) % MAX_HISTORY_COUNT;
+                historyCount++;
             }
             executeCommand(arguments, history);
         }
@@ -291,8 +306,17 @@ void changeDirectory(char **arguments) {
  *  Saves the last non-history command into the historyCommand at historyCount
  */
 void saveCommand(char *input, historyCommand *history, int historyCount) {
-   history[historyCount].commandNumber = historyCount; 
-   strcpy(history[historyCount].command, input);
+
+    if (historyCount >= MAX_HISTORY_COUNT) {
+        //SHIFTUP 
+        for (int i = 0; i < MAX_HISTORY_COUNT - 1; i++) {
+            strcpy(history[i].command, history[i + 1].command);
+        }
+        strcpy(history[MAX_HISTORY_COUNT - 1].command, input);
+    } else {
+        history[historyCount].commandNumber = historyCount; 
+        strcpy(history[historyCount].command, input);
+    }
 }
 
 /*
