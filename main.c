@@ -10,7 +10,7 @@
 #define DELIMITER_LENGTH 8
 #define MAX_ARGUMENTS 50
 #define MAX_HISTORY_COUNT 20
-#define HISTORY_FILE_NAME ".hist_list" 
+#define HISTORY_FILE_NAME "/.hist_list"
 
 char *originalPath;
 
@@ -19,14 +19,14 @@ struct historyCommand {
     char command[MAX_INPUT_SIZE];
 } typedef historyCommand;
 
-void getInput(char *input);
+void getInput(char *input, historyCommand *history);
 void parse(char *input, char **arguments);
 void executeCommand(char **arguments, historyCommand* history);
 void execute(char **arguments);
 void executeHistoryCommand(char **arguments, historyCommand* history, int historyNumber);
 
 //Internal commands
-void exitShell();
+void exitShell(historyCommand *history);
 void getPath(char **arguments);
 void setPath(char **arguments);
 void changeDirectory(char **arguments);
@@ -35,13 +35,14 @@ void saveCommand(char *input, historyCommand* history, int historyCount);
 void printHistory(char **arguments, historyCommand* history);
 
 void readHistoryFile(historyCommand *history, int *historyCount);
-void saveHistoryToFile();
+void saveHistoryToFile(historyCommand *history);
 
 int isStringNumber(char *string);
+char *getHistoryFilename();
 
 int main() {
     originalPath = getenv("PATH");
-    printf("Initial PATH test: %s\n", originalPath);
+    //printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
     int historyCount = 0;
     historyCommand history[MAX_HISTORY_COUNT] = {{0}};
@@ -50,7 +51,7 @@ int main() {
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
         char *arguments[MAX_ARGUMENTS];
-        getInput(input);
+        getInput(input, history);
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
@@ -136,6 +137,7 @@ int main() {
                 //Replace dangling space with a newline
                 int len = strlen(temp);
                 temp[len - 1] = '\n';
+
                 saveCommand(temp, history, historyCount);
                 historyCount++;
             }
@@ -148,22 +150,24 @@ int main() {
 /*
  *  Gets input from the user
  */
-void getInput(char *input) {
+void getInput(char *input, historyCommand *history) {
 
     printf("> ");
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
-        exitShell();
+        exitShell(history);
     }
 
 }
 
 /*
  *   Exits the shell
+ *   Saves command history to history file
  *   Resets the PATH to the original
  */
-void exitShell() {
+void exitShell(historyCommand *history) {
+    saveHistoryToFile(history);
     setenv("PATH", originalPath, 1);
-    printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
+    //printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
     exit(0);
  }
 
@@ -202,7 +206,7 @@ void executeCommand(char **arguments, historyCommand* history) {
             printf("Too many arguments for exit\n");
             return;
         }
-        exitShell();
+        exitShell(history);
     } else if(strcmp("getpath", command) == 0) {
         getPath(arguments);
     } else if(strcmp("setpath", command) == 0) {
@@ -369,7 +373,10 @@ void executeHistoryCommand(char **arguments, historyCommand* history, int histor
  */
 void readHistoryFile(historyCommand *history, int *historyCount) {
     FILE *file;
-    file = fopen(HISTORY_FILE_NAME, "r");
+    char *filename = getHistoryFilename();
+    printf("Filename: %s\n", filename);
+    file = fopen(filename, "r");
+     
     if (file == NULL) {
         perror("Error opening history file: ");
         return;
@@ -379,7 +386,8 @@ void readHistoryFile(historyCommand *history, int *historyCount) {
     while (fgets(line, MAX_INPUT_SIZE, file)) {
         if (*historyCount >= MAX_HISTORY_COUNT) {
             *historyCount = MAX_HISTORY_COUNT;
-            printf("Too much history lines in history file\n");
+            //Stop program if there's an error maybe?
+            printf("Too many history lines in history file\n");
             return;
         }
         char command[MAX_INPUT_SIZE] = {'\0'};   
@@ -387,23 +395,78 @@ void readHistoryFile(historyCommand *history, int *historyCount) {
 
         //Gets the whole string up until the new line
         //Seems to be one of the only ways to get the whole line after the digits
-        sscanf(line, "%d %[^\n]", &commandNumber, command);
+        int result;
+        result = sscanf(line, "%d %[^\n]", &commandNumber, command);
+        if (result < 2) {
+            printf("Error at line %d in history file.\n", i + 1);
+            printf("Saving history up until error\n");
+            exitShell(history);
+        }
 
         //Add newline at end of line
         int len = strlen(command);
         command[len] = '\n';
 
-        //Store the command
-        
+        //Store the command in history
         *historyCount = *historyCount + 1;
-        saveCommand(command, history, *historyCount);
+        
+        //+1 to bring number to human counting
+        if (i == 0) {
+            if (commandNumber != 1) {
+                printf("History number out of order: %d line %d\n", commandNumber, i + 1);
+                printf("Saving history up until error\n");
+                exitShell(history);
+            }
+        } else {
+            if (commandNumber - 1 != history[i - 1].commandNumber + 1) {
+                printf("History number out of order: %d line %d\n", commandNumber, i + 1);
+                printf("Saving history up until error\n");
+                exitShell(history);
+            }
+        }
         history[i].commandNumber = commandNumber - 1;
         strcpy(history[i].command, command);
         i++;
     }
 
-    //*historyCount = i;
-    
+    free(filename);
     fclose(file);
 
+}
+
+/*
+ * Saves the current history stored in historyCommand to the
+ *  history file
+ */
+void saveHistoryToFile(historyCommand *history) {
+    FILE *file;
+    char *filename = getHistoryFilename();
+    printf("Filename: %s\n", filename);
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("Error opening history file: ");
+        return;
+    }
+    for (int i = 0; i < MAX_HISTORY_COUNT; i++) {
+        //Check if history entry is empty
+        if (history[i].command[0] == '\0') {
+            break;
+        }
+
+        fprintf(file, "%d %s", history[i].commandNumber + 1, history[i].command);        
+    }
+    free(filename);
+    fclose(file);
+}
+
+/*
+ *  Creates the filename for the history file and returns a pointer to it
+ *  Caller must free the pointer
+ */
+char *getHistoryFilename() {
+    char *filename;
+    filename = malloc(MAX_INPUT_SIZE);
+    strcat(filename, getenv("HOME"));
+    strcat(filename, HISTORY_FILE_NAME);
+    return filename;
 }
