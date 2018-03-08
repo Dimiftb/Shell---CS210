@@ -10,6 +10,8 @@
 #define DELIMITER_LENGTH 8
 #define MAX_ARGUMENTS 50
 #define MAX_HISTORY_COUNT 20
+#define HISTORY_FILE_NAME ".hist_list" 
+
 char *originalPath;
 
 struct historyCommand {
@@ -32,6 +34,9 @@ void changeDirectory(char **arguments);
 void saveCommand(char *input, historyCommand* history, int historyCount);
 void printHistory(char **arguments, historyCommand* history);
 
+void readHistoryFile(historyCommand *history, int *historyCount);
+void saveHistoryToFile();
+
 int isStringNumber(char *string);
 
 int main() {
@@ -39,13 +44,9 @@ int main() {
     printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
     int historyCount = 0;
-    historyCommand history[MAX_HISTORY_COUNT] =  {{0}};
-    
+    historyCommand history[MAX_HISTORY_COUNT] = {{0}};
+    readHistoryFile(history, &historyCount);
 
-    //SHIFT
-
-
-    //set all of history commands to null
     while(1) {
         char input[MAX_INPUT_SIZE] = {'\0'};
         char *arguments[MAX_ARGUMENTS];
@@ -360,4 +361,49 @@ void executeHistoryCommand(char **arguments, historyCommand* history, int histor
     strcpy(temp, history[historyNumber].command);
     parse(temp, arguments);
     executeCommand(arguments, history);
+}
+
+/*
+ *  Reads the history file and loads that into the given historyCommand struct
+ *  and sets historyCount to the number of lines read
+ */
+void readHistoryFile(historyCommand *history, int *historyCount) {
+    FILE *file;
+    file = fopen(HISTORY_FILE_NAME, "r");
+    if (file == NULL) {
+        perror("Error opening history file: ");
+        return;
+    }
+    int i = 0;
+    char line[MAX_INPUT_SIZE] = {'\0'};
+    while (fgets(line, MAX_INPUT_SIZE, file)) {
+        if (*historyCount >= MAX_HISTORY_COUNT) {
+            *historyCount = MAX_HISTORY_COUNT;
+            printf("Too much history lines in history file\n");
+            return;
+        }
+        char command[MAX_INPUT_SIZE] = {'\0'};   
+        int commandNumber;
+
+        //Gets the whole string up until the new line
+        //Seems to be one of the only ways to get the whole line after the digits
+        sscanf(line, "%d %[^\n]", &commandNumber, command);
+
+        //Add newline at end of line
+        int len = strlen(command);
+        command[len] = '\n';
+
+        //Store the command
+        
+        *historyCount = *historyCount + 1;
+        saveCommand(command, history, *historyCount);
+        history[i].commandNumber = commandNumber - 1;
+        strcpy(history[i].command, command);
+        i++;
+    }
+
+    //*historyCount = i;
+    
+    fclose(file);
+
 }
