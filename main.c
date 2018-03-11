@@ -21,24 +21,27 @@ struct historyCommand {
 
 void getInput(char *input, historyCommand *history);
 void parse(char *input, char **arguments);
-void executeCommand(char **arguments, historyCommand* history);
+void executeCommand(char **arguments, historyCommand *history);
 void execute(char **arguments);
-void executeHistoryCommand(char **arguments, historyCommand* history, int historyNumber);
+void executeHistoryCommand(char **arguments, historyCommand *history, int historyNumber);
+void repeatLastCommand(char **arguments, historyCommand *history, int historyCount);
+void repeatPastCommand(char **arguments, historyCommand *history, int historyCount);
 
 //Internal commands
 void exitShell(historyCommand *history);
 void getPath(char **arguments);
 void setPath(char **arguments);
 void changeDirectory(char **arguments);
+void printHistory(char **arguments, historyCommand *history);
 
-void saveCommand(char *input, historyCommand* history, int historyCount);
-void printHistory(char **arguments, historyCommand* history);
+void saveCommand(char *input, historyCommand *history, int historyCount);
 
 void readHistoryFile(historyCommand *history, int *historyCount);
 void saveHistoryToFile(historyCommand *history);
+char *getHistoryFilename();
 
 int isStringNumber(char *string);
-char *getHistoryFilename();
+void joinArguments(char **arguments, char *string);
 
 int main() {
     originalPath = getenv("PATH");
@@ -66,59 +69,11 @@ int main() {
             }
             //Repeat last command
             if (arguments[0][1] == '!') {
-                if (historyCount == 0) {
-                    printf("History is empty\n");
-                    continue;
-                }
-                if (historyCount > MAX_HISTORY_COUNT - 1) {
-                    executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT - 1);
-                } else {
-                    executeHistoryCommand(arguments, history, historyCount - 1);
-                }
-
+                repeatLastCommand(arguments, history, historyCount);
             } else {
                 //Repeating some previous command
 
-                int numberStartIndex;
-                //Check for negative sign so we can avoid '-' and '!' being considered for numbers
-                if (arguments[0][1] == '-') {
-                    numberStartIndex = 2;
-                } else {
-                    numberStartIndex = 1;
-                }
-
-                int isANumber = isStringNumber(arguments[0] + numberStartIndex);
-
-                if (!isANumber) {
-                    printf("Argument is not a number\n");
-                    continue;
-                }
-                char numberString[MAX_INPUT_SIZE] = {'\0'};
-                strcpy(numberString, arguments[0] + 1);
-
-                int number;
-                number = atoi(numberString);
-                if (number == 0) {
-                    printf("Invalid number for history\n");
-                    continue;
-                }
-                
-                //Make sure entered number is not greater than current history
-                if ((abs(number)) > MAX_HISTORY_COUNT || abs(number) > historyCount ) {
-                    printf("Not enough history\n");
-                    continue;
-                }
-                if (number > 0) {
-                    //Positive
-                    executeHistoryCommand(arguments, history, number - 1);
-                } else {
-                    //Negative
-                    if (historyCount > MAX_HISTORY_COUNT - 1) {
-                        executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT + number);
-                    } else {
-                        executeHistoryCommand(arguments, history, historyCount + number);
-                    }
-                }
+                repeatPastCommand(arguments, history, historyCount);
             }
         } else {
             //Not a history invocation
@@ -127,18 +82,11 @@ int main() {
             //Save the command to history
             //Ensure we're not going to save an empty line
             if (arguments[0] != NULL) {
-                int i = 0;
-                //Join arguments together with spaces in between
-                while (arguments[i] != NULL) {
-                    strcat(temp, arguments[i]);
-                    strcat(temp, " ");
-                    i++; 
-                }
-                //Replace dangling space with a newline
-                int len = strlen(temp);
-                temp[len - 1] = '\n';
+                    
+                char joinedArguments[MAX_INPUT_SIZE] = {'\0'};
+                joinArguments(arguments, joinedArguments);
 
-                saveCommand(temp, history, historyCount);
+                saveCommand(joinedArguments, history, historyCount);
                 historyCount++;
             }
             executeCommand(arguments, history);
@@ -465,8 +413,90 @@ void saveHistoryToFile(historyCommand *history) {
  */
 char *getHistoryFilename() {
     char *filename;
-    filename = malloc(MAX_INPUT_SIZE);
+    //filename = malloc(MAX_INPUT_SIZE);
+    filename = calloc(MAX_INPUT_SIZE, 1);
     strcat(filename, getenv("HOME"));
     strcat(filename, HISTORY_FILE_NAME);
     return filename;
+}
+
+/*
+ *  Repeats the last command from the user's history
+ */
+void repeatLastCommand(char **arguments, historyCommand *history, int historyCount) {
+    if (historyCount == 0) {
+        printf("History is empty\n");
+        return;
+    }
+    if (historyCount > MAX_HISTORY_COUNT - 1) {
+        executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT - 1);
+    } else {
+        executeHistoryCommand(arguments, history, historyCount - 1);
+    }
+
+}
+
+/*
+ *  Repeats a command from the user's history
+ */
+void repeatPastCommand(char **arguments, historyCommand *history, int historyCount) {
+    int numberStartIndex;
+    //Check for negative sign so we can avoid '-' and '!' being considered for numbers
+    if (arguments[0][1] == '-') {
+        numberStartIndex = 2;
+    } else {
+        numberStartIndex = 1;
+    }
+
+    int isANumber = isStringNumber(arguments[0] + numberStartIndex);
+
+    if (!isANumber) {
+        printf("Argument is not a number\n");
+        return;
+    }
+    char numberString[MAX_INPUT_SIZE] = {'\0'};
+    //+1 to get characters after the initial '!'
+    strcpy(numberString, arguments[0] + 1);
+
+    int number;
+    number = atoi(numberString);
+
+    if (number == 0) {
+        printf("Invalid number for history\n");
+        return;
+    }
+    
+    //Make sure entered number is not greater than current history
+    if ((abs(number)) > MAX_HISTORY_COUNT || abs(number) > historyCount ) {
+        printf("Not enough history\n");
+        return;
+    }
+    if (number > 0) {
+        //Positive
+        executeHistoryCommand(arguments, history, number - 1);
+    } else {
+        //Negative
+        if (historyCount > MAX_HISTORY_COUNT - 1) {
+            executeHistoryCommand(arguments, history, MAX_HISTORY_COUNT + number);
+        } else {
+            executeHistoryCommand(arguments, history, historyCount + number);
+        }
+    }
+}
+
+/*
+ * Concatenates arguments into a given string.
+ * Assumes string has enough space for all arguments and is null
+ */
+void joinArguments(char **arguments, char *string) {
+    int i = 0;
+    //Join arguments together with spaces in between
+    while (arguments[i] != NULL) {
+        strcat(string, arguments[i]);
+        strcat(string, " ");
+        i++; 
+    }
+    //Replace dangling space with a newline
+    int len = strlen(string);
+    string[len - 1] = '\n';
 }
