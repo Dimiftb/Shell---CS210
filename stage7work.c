@@ -591,6 +591,10 @@ void setAlias(char **arguments) {
  * Removes an alias tuple.
  */
 void removeAlias(char **arguments) {
+    if(arguments[1] == NULL) {
+        printf("Not enough arguments for unalias.\n");
+        return;
+    }
     int i;
     for(i = 0; i < MAX_ALIASES; i++) {
         if(aliases[i][1] != NULL && (strcmp(aliases[i][1], arguments[1]) == 0)) {
