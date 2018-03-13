@@ -16,7 +16,7 @@
 #define MAX_ALIASES 10
 
 char *originalPath;
-char *aliases[10][2] = { '\0' };
+char ***aliases;
 
 struct historyCommand {
     int commandNumber;
@@ -53,8 +53,11 @@ void removeAlias(char **arguments);
 void printAlias(char **arguments);
 
 void clearArguments(char **arguments);
+void buildAliasCommand(char **arguments);
+void allocateMemoryForAliases();
 
 int main() {
+    allocateMemoryForAliases();
     originalPath = getenv("PATH");
     //printf("Initial PATH test: %s\n", originalPath);
     chdir(getenv("HOME"));
@@ -531,16 +534,17 @@ void replaceAlias(char *input) {
     char originalLine[MAX_INPUT_SIZE] = { '\0' };
     
     strcpy(originalLine, input);
-    
+    //get command
     token = strtok(originalLine, delimiters);
-    
+    //look for an alias and get the alias command if one is found
     for(int j = 0; j < MAX_ALIASES; j++) {
         if(token != NULL && aliases[j][0] != NULL && (strcmp(token, aliases[j][0]) == 0)) {
           token = aliases[j][1];
         }
     }
-    
+    // start building the actual line that must be executed
     strcpy(line, token);
+    //get rest of original line after the possible alias
     token = strtok(NULL, "");
     if(token != NULL) {
         strcat(line, " ");
@@ -566,19 +570,18 @@ void setAlias(char **arguments) {
         int i;
         //look for existing alias
         for(i = 0; i < MAX_ALIASES; i++) {
-            if(aliases[i][0] != NULL && strcmp(aliases[i][0], arguments[1]) == 0) {
+            if(strcmp(aliases[i][0], arguments[1]) == 0) {
                 printf("[%s-%s] has been updated to ", aliases[i][0], aliases[i][1]);
-                printf("arguments[2]:<%s>\n", arguments[2]);
-                aliases[i][1] = arguments[2];
+                buildAliasCommand(arguments);
+                strcpy(aliases[i][1], arguments[2]);
                 printf("[%s-%s].\n", aliases[i][0], aliases[i][1]);
                 return;
             }
         }
         //allocate memory for a new alias and store
         for(i=0; i < MAX_ALIASES; i++) {
-            if(aliases[i][0] == NULL) {
-                aliases[i][0] = (char*)malloc(sizeof(arguments[1]));
-                aliases[i][1] = (char*)malloc(sizeof(arguments[2]));
+            if(strcmp(aliases[i][0], "") == 0) {
+                buildAliasCommand(arguments);
                 strcpy(aliases[i][0], arguments[1]);
                 strcpy(aliases[i][1], arguments[2]);
                 return;
@@ -597,10 +600,10 @@ void removeAlias(char **arguments) {
     }
     int i;
     for(i = 0; i < MAX_ALIASES; i++) {
-        if(aliases[i][1] != NULL && (strcmp(aliases[i][1], arguments[1]) == 0)) {
+        if((strcmp(aliases[i][1], arguments[1]) == 0)) {
             printf("[%s-%s] successfully removed.\n", aliases[i][0], aliases[i][1]);
-            aliases[i][0] = NULL;
-            aliases[i][1] = NULL;
+            aliases[i][0] = "";
+            aliases[i][1] = "";
             return;
         }
     }
@@ -614,7 +617,7 @@ void removeAlias(char **arguments) {
 void printAlias(char **arguments) {
     int i,j;
     for(i = 0; i < MAX_ALIASES; i++) {
-            printf("%d. [%s - %s]; \n", i + 1, aliases[i][0], aliases[i][1]);
+            printf("%d.[\"%s\" - \"%s\"]; \n", i + 1, aliases[i][0], aliases[i][1]);
     }
 }
 
@@ -627,4 +630,34 @@ void clearArguments(char **arguments) {
             arguments[i] = NULL;
         }
     }
+}
+
+/*
+ * Builds a string of all arguments from arguments[2] onwards. 
+ */
+void buildAliasCommand(char **arguments) {
+    char aliasCommand[MAX_INPUT_SIZE] = "";
+    for(int i = 2; i < MAX_ARGUMENTS; i++) {
+        if(arguments[i] != NULL) {
+            strcat(aliasCommand, arguments[i]);
+            if(arguments[i+1] != NULL)
+                strcat(aliasCommand, " ");
+        }
+    }
+    arguments[2] = aliasCommand;
+}
+
+/*
+* Allocates memory for storing the aliases (only for stage 7)
+*/ 
+void allocateMemoryForAliases() {
+    aliases = (char ***)malloc(MAX_ALIASES*sizeof(char **));
+    for (int i = 0; i < MAX_ALIASES; i++)
+    {
+        aliases[i] = (char**)malloc(2*sizeof(char*));
+        for(int j = 0; j < 2; j++) {
+            aliases[i][j] = malloc(MAX_INPUT_SIZE*sizeof(char));
+        }
+    }
+
 }
