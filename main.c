@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -9,10 +10,16 @@
 #define MAX_INPUT_SIZE 512
 #define DELIMITER_LENGTH 8
 #define MAX_ARGUMENTS 50
+#define MAX_ALIASES 10
 #define MAX_HISTORY_COUNT 20
 #define HISTORY_FILE_NAME "/.hist_list"
 
 char *originalPath;
+
+struct alias {
+    char aliasName[MAX_INPUT_SIZE];
+    char command[MAX_INPUT_SIZE];
+} typedef alias;
 
 struct historyCommand {
     int commandNumber;
@@ -43,6 +50,15 @@ char *getHistoryFilename();
 int isStringNumber(char *string);
 void joinArguments(char **arguments, char *string);
 
+void printAliases();
+void addAlias(char **arguments);
+void removeAlias(char **arguments);
+void replaceAlias(char *input);
+
+bool isAliasesEmpty(); 
+
+alias aliases[MAX_ALIASES] = {{{0}}, {{0}}};
+
 int main() {
     originalPath = getenv("PATH");
     //printf("Initial PATH test: %s\n", originalPath);
@@ -51,10 +67,18 @@ int main() {
     historyCommand history[MAX_HISTORY_COUNT] = {{0}};
     readHistoryFile(history, &historyCount);
 
+
     while(1) {
+        //Get input
+        //Parse that input
         char input[MAX_INPUT_SIZE] = {'\0'};
         char *arguments[MAX_ARGUMENTS];
         getInput(input, history);
+
+        char unAliasedInput[MAX_INPUT_SIZE];
+        strcpy(unAliasedInput, input);
+
+        replaceAlias(input);
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
@@ -77,14 +101,15 @@ int main() {
             }
         } else {
             //Not a history invocation
-            char temp[MAX_INPUT_SIZE] = {'\0'};
 
             //Save the command to history
             //Ensure we're not going to save an empty line
             if (arguments[0] != NULL) {
                     
                 char joinedArguments[MAX_INPUT_SIZE] = {'\0'};
-                joinArguments(arguments, joinedArguments);
+                char *tempArguments[MAX_ARGUMENTS];
+                parse(unAliasedInput, tempArguments);
+                joinArguments(tempArguments, joinedArguments);
 
                 saveCommand(joinedArguments, history, historyCount);
                 historyCount++;
@@ -125,10 +150,11 @@ void exitShell(historyCommand *history) {
  * Assumes arguments has space
  */
 void parse(char *input, char **arguments) {
-    
+
     const char delimiters[10] = " \t;<>|\n&";
     char* token;
-
+    //replace alias words with their command
+    //replace "this" with "ls -l"
     token = strtok(input, delimiters);  
     int i = 0;
     while(token != NULL) {
@@ -138,7 +164,6 @@ void parse(char *input, char **arguments) {
         token = strtok(NULL, delimiters);        
     }
     arguments[i] = NULL;
-	
 }
 
 /*
@@ -164,6 +189,14 @@ void executeCommand(char **arguments, historyCommand* history) {
     } else if(strcmp("history", command) == 0) {
         //Print history
         printHistory(arguments, history);
+    } else if(strcmp("alias", command) == 0) {
+        if (arguments[1] == NULL) {
+            printAliases();
+        } else {
+            addAlias(arguments);
+        }
+    } else if(strcmp("unalias", command) == 0) {
+        removeAlias(arguments);
     } else {
         //Non internal command 
         execute(arguments);
@@ -311,6 +344,7 @@ int isStringNumber(char *string) {
 void executeHistoryCommand(char **arguments, historyCommand* history, int historyNumber) {
     char temp[MAX_INPUT_SIZE];
     strcpy(temp, history[historyNumber].command);
+    replaceAlias(temp);
     parse(temp, arguments);
     executeCommand(arguments, history);
 }
@@ -500,3 +534,133 @@ void joinArguments(char **arguments, char *string) {
     int len = strlen(string);
     string[len - 1] = '\n';
 }
+
+/*
+ *  Adds the given alias to the alias struct
+ */
+void addAlias(char **arguments) {
+    char *aliasName = arguments[1];
+    char *aliasCommand = arguments[2];
+
+    if (aliasCommand == NULL) {
+        printf("Not enough arguments for alias\n");
+        return;
+    }
+    char wholeCommand[MAX_INPUT_SIZE] = {'\0'};
+    //Combine all command arguments into one string
+    //Start at the argument that gives the command
+    int i = 2;
+    while (arguments[i] != NULL) {
+        strcat(wholeCommand, arguments[i]);
+        strcat(wholeCommand, " ");
+        i++;
+    }
+    //Replace trailing whitespace with newline
+    int len = strlen(wholeCommand);
+    wholeCommand[len - 1] = '\0';
+
+    //Find the first empty position
+    for (int i = 0; i < MAX_ALIASES; i++) {
+        //Check for duplicate alias
+        if (strcmp(aliases[i].aliasName, aliasName) == 0) {
+            printf("Overwriting alias %s\n", aliasName);
+            strcpy(aliases[i].aliasName, aliasName);
+            strcpy(aliases[i].command, wholeCommand);
+            return;
+        }
+        if (strcmp(aliases[i].aliasName, "") == 0) {
+            strcpy(aliases[i].aliasName, aliasName);
+            strcpy(aliases[i].command, wholeCommand);
+            printf("Aliased %s to %s\n", aliasName, wholeCommand);
+            return;
+        }
+    }
+    printf("No more space for aliases\n");
+
+}
+
+/*
+ * Removes the given alias from the aliases struct
+ */
+void removeAlias(char **arguments) {
+    char *aliasName = arguments[1];
+
+    if (aliasName == NULL) {
+        printf("Not enough arguments for unalias\n");
+        return;
+    }
+
+    if (arguments[2] != NULL) {
+        printf("Too many arguments for unalias\n");
+        return;
+    }
+
+    for (int i = 0; i < MAX_ALIASES; i++) {
+         if (strcmp(aliases[i].aliasName, aliasName) == 0) {
+            strcpy(aliases[i].aliasName, "");
+            strcpy(aliases[i].command, "");
+            printf("Removed %s from aliases\n", aliasName); 
+            return;
+         }
+    }
+}
+
+/*
+ *  Prints the aliases by Name: Command:
+ */
+void printAliases() {
+    if (isAliasesEmpty()) {
+        printf("No aliases to display\n");
+        return;
+    }
+    for (int i = 0; i < MAX_ALIASES; i++) {
+        if (strcmp(aliases[i].aliasName, "") != 0) {
+            printf("Name: %s Command: %s\n", aliases[i].aliasName, aliases[i].command);
+        }
+    }
+}
+
+/*
+ *  Checks if the aliases are empty.
+ *  Returns true if there are no aliases
+ */
+bool isAliasesEmpty() {
+    for (int i = 0; i < MAX_ALIASES; i++) {
+        if (strcmp(aliases[i].aliasName, "") != 0) {
+            //Not empty
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
+ *  Checks for every command whether it's an alias
+ */     
+void replaceAlias(char *input) {
+    const char delimiters[10] = " \t;<>|\n&";
+    char* token;
+    char line[MAX_INPUT_SIZE] = { '\0' };
+    char originalLine[MAX_INPUT_SIZE] = { '\0' };
+
+    strcpy(originalLine, input);
+    //get command
+        token = strtok(originalLine, delimiters);
+    //look for an alias and get the alias command if one is found
+    for(int j = 0; j < MAX_ALIASES; j++) {
+        if(token != NULL && aliases[j].aliasName != NULL && (strcmp(token, aliases[j].aliasName) == 0)) {
+            token = aliases[j].command;
+        }
+    }
+    // start building the actual line that must be executed
+    strcpy(line, token);
+    //get rest of original line after the possible alias
+    token = strtok(NULL, "");
+    if(token != NULL) {
+        strcat(line, " ");
+        strcat(line, token);
+    }
+
+    strcpy(input, line);
+}
+
