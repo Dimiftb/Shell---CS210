@@ -83,9 +83,7 @@ int main() {
         char unAliasedInput[MAX_INPUT_SIZE];
         strcpy(unAliasedInput, input);
 
-        printf("is it here\n");
         replaceAlias(input);
-        printf("please\n");
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
