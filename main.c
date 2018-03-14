@@ -13,6 +13,7 @@
 #define MAX_ALIASES 10
 #define MAX_HISTORY_COUNT 20
 #define HISTORY_FILE_NAME "/.hist_list"
+#define ALIASES_FILE_NAME "/.aliases"
 
 char *originalPath;
 
@@ -55,6 +56,10 @@ void addAlias(char **arguments);
 void removeAlias(char **arguments);
 void replaceAlias(char *input);
 
+void readAliasesFile();
+void saveAliasesFile();
+char *getAliasesFilename();
+
 bool isAliasesEmpty(); 
 
 alias aliases[MAX_ALIASES] = {{{0}}, {{0}}};
@@ -66,7 +71,7 @@ int main() {
     int historyCount = 0;
     historyCommand history[MAX_HISTORY_COUNT] = {{0}};
     readHistoryFile(history, &historyCount);
-
+    readAliasesFile();
 
     while(1) {
         //Get input
@@ -78,7 +83,9 @@ int main() {
         char unAliasedInput[MAX_INPUT_SIZE];
         strcpy(unAliasedInput, input);
 
+        printf("is it here\n");
         replaceAlias(input);
+        printf("please\n");
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
@@ -138,6 +145,7 @@ void getInput(char *input, historyCommand *history) {
  *   Resets the PATH to the original
  */
 void exitShell(historyCommand *history) {
+    saveAliasesFile();
     saveHistoryToFile(history);
     setenv("PATH", originalPath, 1);
     //printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
@@ -645,7 +653,7 @@ void replaceAlias(char *input) {
 
     strcpy(originalLine, input);
     //get command
-        token = strtok(originalLine, delimiters);
+    token = strtok(originalLine, delimiters);
     //look for an alias and get the alias command if one is found
     for(int j = 0; j < MAX_ALIASES; j++) {
         if(token != NULL && aliases[j].aliasName != NULL && (strcmp(token, aliases[j].aliasName) == 0)) {
@@ -653,7 +661,9 @@ void replaceAlias(char *input) {
         }
     }
     // start building the actual line that must be executed
-    strcpy(line, token);
+    if (token != NULL) {
+        strcpy(line, token);
+    }
     //get rest of original line after the possible alias
     token = strtok(NULL, "");
     if(token != NULL) {
@@ -664,3 +674,80 @@ void replaceAlias(char *input) {
     strcpy(input, line);
 }
 
+/*
+ *  Creates the filename for the aliases file and returns a pointer to it
+ *  Caller must free the pointer
+ */
+char *getAliasesFilename() {
+    char *filename;
+    filename = calloc(MAX_INPUT_SIZE, 1);
+    strcat(filename, getenv("HOME"));
+    strcat(filename, ALIASES_FILE_NAME);
+    return filename;
+}
+
+/*
+ *  Saves all aliases in the aliases struct to the file at filename
+ */
+void saveAliasesFile() {
+    FILE *file;
+    char *filename = getAliasesFilename();
+    printf("Filename: %s\n", filename);
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("Error opening alias file: ");
+        return;
+    }
+    for (int i = 0; i < MAX_ALIASES; i++) {
+        //Check if aliases entry is empty
+        if (strcmp(aliases[i].aliasName, "") == 0) {
+            break;
+        }
+
+        fprintf(file, "%s %s\n", aliases[i].aliasName, aliases[i].command);        
+    }
+    free(filename);
+    fclose(file);
+}
+
+void readAliasesFile() {
+    FILE *file;
+    char *filename = getAliasesFilename();
+    printf("Filename: %s\n", filename);
+    file = fopen(filename, "r");
+
+    if (file == NULL) {
+        perror("Error opening aliases file: ");
+        return;
+    }
+    int i = 0;
+    char line[MAX_INPUT_SIZE] = {'\0'};
+    while (fgets(line, MAX_INPUT_SIZE, file)) {
+        if (i >= MAX_ALIASES) {
+            printf("Too many aliases in the aliases file. No longer reading\n");
+            break;
+        }
+
+        char aliasName[MAX_INPUT_SIZE];
+        char command[MAX_INPUT_SIZE];
+        //Gets the whole string up until the new line
+        //Seems to be one of the only ways to get the whole line after the digits
+        int result;
+        result = sscanf(line, "%s %[^\n]", aliasName, command);
+        if (result < 2) {
+            printf("Error at line %d in alias file.\n", i + 1);
+        }
+
+        //Add newline at end of line
+
+
+        strcpy(aliases[i].aliasName, aliasName);
+        strcpy(aliases[i].command, command);
+        i++;
+    }
+    
+
+    free(filename);
+    fclose(file);
+
+}
