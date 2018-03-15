@@ -8,14 +8,12 @@
 #include <ctype.h>
 
 #define MAX_INPUT_SIZE 512
-#define DELIMITER_LENGTH 8
 #define MAX_ARGUMENTS 50
 #define MAX_ALIASES 10
 #define MAX_HISTORY_COUNT 20
+#define DELIMITER_LENGTH 8
 #define HISTORY_FILE_NAME "/.hist_list"
 #define ALIASES_FILE_NAME "/.aliases"
-
-char *originalPath;
 
 struct alias {
     char aliasName[MAX_INPUT_SIZE];
@@ -63,6 +61,7 @@ char *getAliasesFilename();
 bool isAliasesEmpty(); 
 
 alias aliases[MAX_ALIASES] = {{{0}}, {{0}}};
+char *originalPath;
 
 int main() {
     originalPath = getenv("PATH");
@@ -73,7 +72,7 @@ int main() {
     readHistoryFile(history, &historyCount);
     readAliasesFile();
 
-    while(1) {
+    while(true) {
         //Get input
         //Parse that input
         char input[MAX_INPUT_SIZE] = {'\0'};
@@ -89,7 +88,7 @@ int main() {
             continue;
         }
         if (arguments[0][0] == '!') {
-            //Handle history stuff
+            //Handle history
 
             //Check if there's more than 1 arguments
             if (arguments[1] != NULL) {
@@ -101,16 +100,14 @@ int main() {
                 repeatLastCommand(arguments, history, historyCount);
             } else {
                 //Repeating some previous command
-
                 repeatPastCommand(arguments, history, historyCount);
             }
         } else {
-            //Not a history invocation
+            //Else, not a history invocation
 
             //Save the command to history
             //Ensure we're not going to save an empty line
             if (arguments[0] != NULL) {
-                    
                 char joinedArguments[MAX_INPUT_SIZE] = {'\0'};
                 char *tempArguments[MAX_ARGUMENTS];
                 parse(unAliasedInput, tempArguments);
@@ -129,12 +126,11 @@ int main() {
  *  Gets input from the user
  */
 void getInput(char *input, historyCommand *history) {
-
     printf("> ");
+    //Checking if CTRL+D is pressed and handle exitShell
     if(fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
         exitShell(history);
     }
-
 }
 
 /*
@@ -193,9 +189,9 @@ void executeCommand(char **arguments, historyCommand* history) {
     } else if(strcmp("cd", command) == 0) {
         changeDirectory(arguments);
     } else if(strcmp("history", command) == 0) {
-        //Print history
         printHistory(arguments, history);
     } else if(strcmp("alias", command) == 0) {
+        //Check if there is not another argument if there isn't then input was 'alias' so printAliases
         if (arguments[1] == NULL) {
             printAliases();
         } else {
@@ -269,22 +265,23 @@ void setPath(char **arguments) {
  * Changes the working directory
  */
 void changeDirectory(char **arguments) {
+    char *firstArgument = arguments[1];
     //Check for too many arguments
     if (arguments[2] != NULL) {
         printf("Too many arguments for cd\n");
         return;
     }
-    if (arguments[1] == NULL) {
+    if (firstArgument == NULL) {
         //Change to home
         chdir(getenv("HOME"));
     } else {
-        if (strcmp(".", arguments[1]) == 0) {
+        if (strcmp(".", firstArgument) == 0) {
             chdir(".");
-        } else if(strcmp("..", arguments[1]) == 0) {
+        } else if(strcmp("..", firstArgument) == 0) {
             chdir("..");
         } else { 
-            if(chdir(arguments[1]) == -1) {
-		perror(arguments[1]);
+            if(chdir(firstArgument) == -1) {
+		perror(firstArgument);
             }
           }
       }
@@ -692,10 +689,12 @@ void saveAliasesFile() {
     char *filename = getAliasesFilename();
     printf("Filename: %s\n", filename);
     file = fopen(filename, "w");
+
     if (file == NULL) {
         perror("Error opening alias file: ");
         return;
     }
+
     for (int i = 0; i < MAX_ALIASES; i++) {
         //Check if aliases entry is empty
         if (strcmp(aliases[i].aliasName, "") == 0) {
@@ -704,6 +703,7 @@ void saveAliasesFile() {
 
         fprintf(file, "%s %s\n", aliases[i].aliasName, aliases[i].command);        
     }
+
     free(filename);
     fclose(file);
 }
@@ -718,6 +718,7 @@ void readAliasesFile() {
         perror("Error opening aliases file: ");
         return;
     }
+
     int i = 0;
     char line[MAX_INPUT_SIZE] = {'\0'};
     while (fgets(line, MAX_INPUT_SIZE, file)) {
@@ -736,16 +737,11 @@ void readAliasesFile() {
             printf("Error at line %d in alias file.\n", i + 1);
         }
 
-        //Add newline at end of line
-
-
         strcpy(aliases[i].aliasName, aliasName);
         strcpy(aliases[i].command, command);
         i++;
     }
-    
 
     free(filename);
     fclose(file);
-
 }
