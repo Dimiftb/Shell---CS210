@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <ctype.h>
 
+#include "alias.h"
+
 #define MAX_INPUT_SIZE 512
 #define MAX_ARGUMENTS 50
 #define MAX_ALIASES 10
@@ -142,7 +144,7 @@ void exitShell(historyCommand *history) {
     saveAliasesFile();
     saveHistoryToFile(history);
     setenv("PATH", originalPath, 1);
-    //printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
+    printf("Last PATH check whilst exiting: %s\n", getenv("PATH"));
     exit(0);
  }
 
@@ -385,7 +387,7 @@ void readHistoryFile(historyCommand *history, int *historyCount) {
         if (result < 2) {
             printf("Error at line %d in history file.\n", i + 1);
             printf("Saving history up until error\n");
-            exitShell(history);
+            break;
         }
 
         //Add newline at end of line
@@ -400,13 +402,13 @@ void readHistoryFile(historyCommand *history, int *historyCount) {
             if (commandNumber != 1) {
                 printf("History number out of order: %d line %d\n", commandNumber, i + 1);
                 printf("Saving history up until error\n");
-                exitShell(history);
+                break;
             }
         } else {
             if (commandNumber - 1 != history[i - 1].commandNumber + 1) {
                 printf("History number out of order: %d line %d\n", commandNumber, i + 1);
                 printf("Saving history up until error\n");
-                exitShell(history);
+                break;
             }
         }
         history[i].commandNumber = commandNumber - 1;
@@ -606,6 +608,7 @@ void removeAlias(char **arguments) {
             return;
          }
     }
+    printf("Alias not found %s\n", arguments[1]);
 }
 
 /*
