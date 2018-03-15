@@ -7,8 +7,6 @@
 #include <errno.h>
 #include <ctype.h>
 
-#include "alias.h"
-
 #define MAX_INPUT_SIZE 512
 #define MAX_ARGUMENTS 50
 #define MAX_ALIASES 10
@@ -54,7 +52,7 @@ void joinArguments(char **arguments, char *string);
 void printAliases();
 void addAlias(char **arguments);
 void removeAlias(char **arguments);
-void replaceAlias(char *input);
+bool replaceAlias(char *input);
 
 void readAliasesFile();
 void saveAliasesFile();
@@ -64,7 +62,6 @@ bool isAliasesEmpty();
 
 alias aliases[MAX_ALIASES] = {{{0}}, {{0}}};
 char *originalPath;
-
 int main() {
     originalPath = getenv("PATH");
     //printf("Initial PATH test: %s\n", originalPath);
@@ -84,7 +81,11 @@ int main() {
         char unAliasedInput[MAX_INPUT_SIZE];
         strcpy(unAliasedInput, input);
 
-        replaceAlias(input);
+        bool change = false;
+        do {
+            change = replaceAlias(input);
+        } while(change);
+        //eplaceAlias(input);
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
@@ -643,12 +644,12 @@ bool isAliasesEmpty() {
 /*
  *  Checks for every command whether it's an alias
  */     
-void replaceAlias(char *input) {
+bool replaceAlias(char *input) {
     const char delimiters[10] = " \t;<>|\n&";
     char* token;
     char line[MAX_INPUT_SIZE] = { '\0' };
     char originalLine[MAX_INPUT_SIZE] = { '\0' };
-
+    bool changeWasMade = false;
     strcpy(originalLine, input);
     //get command
     token = strtok(originalLine, delimiters);
@@ -656,6 +657,7 @@ void replaceAlias(char *input) {
     for(int j = 0; j < MAX_ALIASES; j++) {
         if(token != NULL && aliases[j].aliasName != NULL && (strcmp(token, aliases[j].aliasName) == 0)) {
             token = aliases[j].command;
+            changeWasMade = true;
         }
     }
     // start building the actual line that must be executed
@@ -670,6 +672,7 @@ void replaceAlias(char *input) {
     }
 
     strcpy(input, line);
+    return changeWasMade;
 }
 
 /*
