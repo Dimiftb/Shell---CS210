@@ -163,7 +163,7 @@ void saveAliasesFile() {
     for (int i = 0; i < MAX_ALIASES; i++) {
         //Check if aliases entry is empty
         if (strcmp(aliases[i].aliasName, "") == 0) {
-            break;
+            continue;
         }
 
         fprintf(file, "%s %s\n", aliases[i].aliasName, aliases[i].command);        
@@ -199,9 +199,14 @@ void readAliasesFile() {
         int result;
         result = sscanf(line, "%s %[^\n]", aliasName, command);
         if (result < 2) {
-            printf("Error at line %d in alias file.\n", i + 1);
+            printf("Error at line %d in alias file. Ignoring this line\n", i + 1);
+            i++;
+            continue;
         }
 
+        if (i == 1) {
+            printf("Shouldn't get here\n");
+        }
         strcpy(aliases[i].aliasName, aliasName);
         strcpy(aliases[i].command, command);
         i++;
