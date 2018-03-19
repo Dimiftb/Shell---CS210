@@ -101,14 +101,13 @@ bool isAliasesEmpty() {
 }
 
 /*
- *  Checks for every command whether it's an alias
+ *  Checks for every command whether it's an alias, replacing it if it is
  */     
 bool replaceAlias(char *input) {
     const char delimiters[] = " \t;<>|\n&";
     char* token;
     char line[MAX_INPUT_SIZE] = { '\0' };
     char originalLine[MAX_INPUT_SIZE] = { '\0' };
-    bool changeWasMade = false;
     strcpy(originalLine, input);
     //get command
     token = strtok(originalLine, delimiters);
@@ -116,7 +115,6 @@ bool replaceAlias(char *input) {
     for(int j = 0; j < MAX_ALIASES; j++) {
         if(token != NULL && aliases[j].aliasName != NULL && (strcmp(token, aliases[j].aliasName) == 0)) {
             token = aliases[j].command;
-            changeWasMade = true;
         }
     }
     // start building the actual line that must be executed
@@ -131,7 +129,6 @@ bool replaceAlias(char *input) {
     }
 
     strcpy(input, line);
-    return changeWasMade;
 }
 
 /*

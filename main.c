@@ -44,11 +44,7 @@ int main() {
         char unAliasedInput[MAX_INPUT_SIZE];
         strcpy(unAliasedInput, input);
 
-        bool change = false;
-        do {
-            change = replaceAlias(input);
-        } while(change);
-        //eplaceAlias(input);
+        replaceAlias(input);
         parse (input, arguments);
         if (arguments[0] == NULL) {
             continue;
