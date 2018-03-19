@@ -8,7 +8,6 @@
 #include "internalCommands.h"
 
 #define MAX_ARGUMENTS 50
-#define DELIMITER_LENGTH 8
 
 void getInput(char *input, historyCommand *history);
 void parse(char *input, char **arguments);
@@ -107,7 +106,7 @@ void getInput(char *input, historyCommand *history) {
  */
 void parse(char *input, char **arguments) {
 
-    const char delimiters[10] = " \t;<>|\n&";
+    const char delimiters[] = " \t;<>|\n&";
     char* token;
     //replace alias words with their command
     //replace "this" with "ls -l"

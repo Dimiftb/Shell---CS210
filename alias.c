@@ -104,7 +104,7 @@ bool isAliasesEmpty() {
  *  Checks for every command whether it's an alias
  */     
 bool replaceAlias(char *input) {
-    const char delimiters[10] = " \t;<>|\n&";
+    const char delimiters[] = " \t;<>|\n&";
     char* token;
     char line[MAX_INPUT_SIZE] = { '\0' };
     char originalLine[MAX_INPUT_SIZE] = { '\0' };
