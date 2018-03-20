@@ -199,9 +199,6 @@ void readAliasesFile() {
             continue;
         }
 
-        if (i == 1) {
-            printf("Shouldn't get here\n");
-        }
         strcpy(aliases[i].aliasName, aliasName);
         strcpy(aliases[i].command, command);
         i++;
