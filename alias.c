@@ -153,7 +153,6 @@ void saveAliasesFile() {
     file = fopen(filename, "w");
 
     if (file == NULL) {
-        perror("Error opening alias file: ");
         return;
     }
 
