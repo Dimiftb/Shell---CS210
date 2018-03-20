@@ -12,7 +12,7 @@ struct alias {
 void printAliases();
 void addAlias(char **arguments);
 void removeAlias(char **arguments);
-bool replaceAlias(char *input);
+void replaceAlias(char *input);
 
 void readAliasesFile();
 void saveAliasesFile();
