@@ -24,15 +24,20 @@ void addAlias(char **arguments) {
     int len = strlen(wholeCommand);
     wholeCommand[len - 1] = '\0';
 
-    //Find the first empty position
+
+
+    //Look for duplicate aliases
     for (int i = 0; i < MAX_ALIASES; i++) {
-        //Check for duplicate alias
         if (strcmp(aliases[i].aliasName, aliasName) == 0) {
             printf("Overwriting alias %s\n", aliasName);
             strcpy(aliases[i].aliasName, aliasName);
             strcpy(aliases[i].command, wholeCommand);
             return;
         }
+    }
+
+    //Find the first empty position
+    for (int i = 0; i < MAX_ALIASES; i++) {
         if (strcmp(aliases[i].aliasName, "") == 0) {
             strcpy(aliases[i].aliasName, aliasName);
             strcpy(aliases[i].command, wholeCommand);
