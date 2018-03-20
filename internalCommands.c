@@ -29,11 +29,11 @@ void getPath(char **arguments) {
  */
 void setPath(char **arguments) {  
     if (arguments[1] == NULL) {
-        fprintf(stderr, "setpath requires an argument. PATH unchanged\n");
+        fprintf(stderr, "setpath requires an argument: provide a path\n");
         return;
     }
     if (arguments[2] != NULL) {
-        printf("Too many arguments for setpath\n");
+        printf("Too many arguments for setpath: provide only one path\n");
         return;
     }
     if (strcmp(arguments[1], "HOME") == 0) {
@@ -54,7 +54,7 @@ void changeDirectory(char **arguments) {
     char *firstArgument = arguments[1];
     //Check for too many arguments
     if (arguments[2] != NULL) {
-        printf("Too many arguments for cd\n");
+        printf("Too many arguments for cd: provide only one directory\n");
         return;
     }
     if (firstArgument == NULL) {

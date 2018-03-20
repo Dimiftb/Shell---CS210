@@ -27,7 +27,7 @@ char *originalPath;
 
 int main() {
     originalPath = getenv("PATH");
-    //printf("Initial PATH test: %s\n", originalPath);
+    printf("Initial PATH: %s\n", originalPath);
     chdir(getenv("HOME"));
     int historyCount = 0;
     historyCommand history[MAX_HISTORY_COUNT] = {{0}};
