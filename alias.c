@@ -194,7 +194,7 @@ void readAliasesFile() {
         int result;
         result = sscanf(line, "%s %[^\n]", aliasName, command);
         if (result < 2) {
-            printf("Error at line %d in alias file. Ignoring this line\n", i + 1);
+            //printf("Error at line %d in alias file. Ignoring this line\n", i + 1);
             i++;
             continue;
         }
