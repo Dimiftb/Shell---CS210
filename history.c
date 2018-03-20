@@ -29,7 +29,6 @@ void readHistoryFile(historyCommand *history, int *historyCount) {
     file = fopen(filename, "r");
      
     if (file == NULL) {
-        perror("Error opening history file: ");
         return;
     }
     int i = 0;
@@ -95,7 +94,6 @@ void saveHistoryToFile(historyCommand *history) {
     printf("Filename: %s\n", filename);
     file = fopen(filename, "w");
     if (file == NULL) {
-        perror("Error opening history file: ");
         return;
     }
     for (int i = 0; i < MAX_HISTORY_COUNT; i++) {

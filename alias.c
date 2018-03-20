@@ -176,7 +176,6 @@ void readAliasesFile() {
     file = fopen(filename, "r");
 
     if (file == NULL) {
-        perror("Error opening aliases file: ");
         return;
     }
 
